@@ -13,3 +13,8 @@ pip install -r requirements.txt
 - Implement trading environment
 - Implement individual DQN agents
 - Implement MADQN algorithm
+
+- Research other algorithms (e.g. PPO, actor-critic)
+- Extend env to multi-agent setting
+- Data collection (email paper authors)
+- Rule-based methods (code up)
