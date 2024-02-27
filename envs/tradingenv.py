@@ -54,8 +54,8 @@ class TradingEnvironment(gym.Env):
 
     def reset(self, seed: int = None, options: dict = None) -> tuple:
         """Reset the environment to its initial state."""
-
         super().reset(seed=seed, options=options)
+
         self.balance = self.initial_balance
         self._balance_history = [self.balance]
         self._timestep = self.lookback_window
@@ -71,7 +71,6 @@ class TradingEnvironment(gym.Env):
     
     def step(self, action: int) -> tuple:
         """Take a step in the environment given an action."""
-
         if self._timestep >= self._end_timestep:
             self._terminated = True
             return self._get_obs(), 0, self._terminated, False, self._get_info()
@@ -124,7 +123,7 @@ class TradingEnvironment(gym.Env):
             if self._position == 1:
                 self.balance = start_balance * (current_price / start_price)
             elif self._position == -1:
-                self.balance = start_balance * (start_price / current_price)
+                self.balance = 2 * start_balance - start_balance * (current_price / start_price)
 
             self._balance_history.append(self.balance)
 
