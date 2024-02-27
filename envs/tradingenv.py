@@ -46,10 +46,10 @@ class TradingEnvironment(gym.Env):
 
         # Observation space contains `lookback_window` number of (OHLCV) observations
         self.observation_space = gym.spaces.Box(
-            low=-np.inf,
+            low=0.0,
             high=np.inf,
-            shape=(lookback_window, 5),
-            dtype=np.float64
+            shape=(lookback_window * 5,),
+            dtype=np.float32
         )
 
     def reset(self, seed: int = None, options: dict = None) -> tuple:
@@ -93,7 +93,7 @@ class TradingEnvironment(gym.Env):
     
     def _get_obs(self) -> np.ndarray:
         """Get the current observation."""
-        return self.df.iloc[self._timestep - self.lookback_window:self._timestep, 1:].values
+        return self.df.iloc[self._timestep - self.lookback_window:self._timestep, 1:].values.flatten()
     
     def _get_info(self) -> dict:
         """Get the current state information."""

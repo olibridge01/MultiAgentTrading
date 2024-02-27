@@ -5,7 +5,7 @@ from envs.tradingenv import TradingEnvironment
 
 # Register custom environments with OpenAI Gym
 register(
-    id='trading-v1',
+    id='trading-v0',
     entry_point='envs.tradingenv:TradingEnvironment',
     kwargs={
         'initial_balance': 1000,

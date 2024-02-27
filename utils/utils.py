@@ -1,10 +1,16 @@
 from collections import deque, namedtuple
+import torch
 import random
 
 class ExperienceReplay(object):
-    def __init__(self, buffer_size: int = 10000):
+    def __init__(self, buffer_size: int = 10000, device: str = None):
         self.buffer = deque([], maxlen=buffer_size)
         self.transition = namedtuple('Experience', ('state', 'action', 'next_state', 'reward'))
+
+        if device is not None:
+            self.device = torch.device(device)
+        else:
+            self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     def add_experience(self, *args):
         """Adds an experience to the replay buffer."""
