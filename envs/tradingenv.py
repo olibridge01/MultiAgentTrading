@@ -57,7 +57,7 @@ class TradingEnvironment(gym.Env):
         super().reset(seed=seed, options=options)
 
         self.balance = self.initial_balance
-        self._balance_history = [self.balance]
+        self.balance_history = [self.balance]
         self._timestep = self.lookback_window
         self._terminated = False
 
@@ -125,7 +125,7 @@ class TradingEnvironment(gym.Env):
             elif self._position == -1:
                 self.balance = 2 * start_balance - start_balance * (current_price / start_price)
 
-            self._balance_history.append(self.balance)
+            self.balance_history.append(self.balance)
 
     def _compute_reward(self) -> float:
         """Compute the reward based on the current balance."""

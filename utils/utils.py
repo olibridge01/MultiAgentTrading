@@ -27,7 +27,6 @@ class ExperienceReplay(object):
     def __len__(self):
         """Gets length of the replay buffer."""
         return len(self.buffer)
-    
 
 class Config(object):
     """
