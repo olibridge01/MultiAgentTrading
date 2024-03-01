@@ -55,7 +55,7 @@ class MACD():
                     self.current_balance -= self.num_shares * self.df['Close'].iloc[i] # update balance
                     position = 1
                 else:
-                    # Hold signal
+                    # hold signal
                     pass
 
             elif self.df['signal'].iloc[i] == -1:
@@ -64,11 +64,11 @@ class MACD():
                     self.num_shares = 0 # update number of shares
                     position = -1 
                 else:
-                    # Hold signal
+                    # hold signal
                     pass
 
             else:
-                # No action
+                # no action
                 pass
             
             # balance is the value of the portfolio (else drops to 0)
