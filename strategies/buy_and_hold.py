@@ -11,8 +11,9 @@ class BuyAndHold():
         self.df = df
         self.initial_balance = 1000
         self.current_balance = 1000
-        self.balance_history = []
+        self._balance_history = [self.initial_balance]
         self.num_shares = 0
+
 
     def implement_buy_and_hold_strategy(self):
 
@@ -20,11 +21,11 @@ class BuyAndHold():
         self.current_balance -= self.num_shares * self.df['Close'].iloc[0] # update balance (zero)
         
         for i in range(len(self.df)):
-            self.balance_history.append(self.current_balance + self.num_shares * self.df['Close'].iloc[i])
+            self._balance_history.append(self.current_balance + self.num_shares * self.df['Close'].iloc[i])
 
 
     def plot_balance(self):
-        plt.scatter(y=self.balance_history, x=self.df.index, c='blue', s=2)
+        plt.scatter(y=self._balance_history, x=np.arange(len(self._balance_history)), c='blue', s=2)
         plt.show()
 
 

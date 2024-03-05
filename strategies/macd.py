@@ -1,5 +1,3 @@
-# These strategies consist of MACD, RSI, MovingAvg Cross, and the Buy and Hold (B&H) with default settings
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -19,7 +17,7 @@ class MACD():
         self.signal_window = signal_window
         self.initial_balance = 1000
         self.current_balance = 1000
-        self.balance_history = []
+        self._balance_history = [self.initial_balance]
         self.num_shares = 0
 
 
@@ -32,51 +30,51 @@ class MACD():
 
     def get_signal_line(self):
         # Compute the signal line; EMA of the MACD line with a default period of 9
-        self.df['signal_line'] = self.df['MACD'].ewm(span=self.signal_window,adjust = False).mean()
+        self.df['signal_line'] = self.df['MACD'].ewm(span=self.signal_window, adjust = False).mean()
 
 
     def get_signal(self):
-        # Create a signal for when to buy and sell; buy when MACD crosses above signal line, sell when MACD crosses below signal line
+        # Create a signal for when to buy and sell
         self.df['signal'] = 0.0
-        self.df['signal'] = np.where(self.df['MACD'] > self.df['signal_line'], 1.0, 0.0)
-        self.df['signal'] = np.where(self.df['MACD'] < self.df['signal_line'], -1.0, self.df['signal'])
+        self.df['signal'] = np.where(self.df['MACD'] > self.df['signal_line'], 1.0, 0.0) # buy when MACD crosses above signal line
+        self.df['signal'] = np.where(self.df['MACD'] < self.df['signal_line'], -1.0, self.df['signal']) # sell when MACD crosses below signal line
 
 
     def implement_macd_strategy(self):    
-        # initial position is 0
+        # Initial position is 0
         position = 0
 
-        # iterate through the data
+        # Iterate through the data
         for i in range(len(self.df)):
-            # if position is 1, buy; if 
+            # If position is 1, buy; if 
             if self.df['signal'].iloc[i] == 1:
                 if position != 1:
-                    self.num_shares = self.current_balance // self.df['Close'].iloc[i] # buy as many shares as possible (must be integer)
-                    self.current_balance -= self.num_shares * self.df['Close'].iloc[i] # update balance
+                    self.num_shares = self.current_balance // self.df['Close'].iloc[i] # Buy as many shares as possible (must be integer)
+                    self.current_balance -= self.num_shares * self.df['Close'].iloc[i] # Update balance
                     position = 1
                 else:
-                    # hold signal
+                    # Hold
                     pass
 
             elif self.df['signal'].iloc[i] == -1:
                 if position != -1:
                     self.current_balance += self.num_shares * self.df['Close'].iloc[i] # sell all shares
-                    self.num_shares = 0 # update number of shares
+                    self.num_shares = 0 # Update number of shares
                     position = -1 
                 else:
-                    # hold signal
+                    # Hold
                     pass
 
             else:
-                # no action
+                # No action
                 pass
             
-            # balance is the value of the portfolio (else drops to 0)
-            self.balance_history.append(self.current_balance + self.num_shares * self.df['Close'].iloc[i])
+            # Balance is the value of the portfolio (else drops to 0)
+            self._balance_history.append(self.current_balance + self.num_shares * self.df['Close'].iloc[i])
 
 
     def plot_balance(self):
-        plt.scatter(y=self.balance_history, x=self.df.index, c='blue', s=2)
+        plt.scatter(y=self._balance_history, x=np.arange(len(self._balance_history)), c='blue', s=2)
         plt.show()
 
 
