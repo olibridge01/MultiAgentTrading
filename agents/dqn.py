@@ -44,10 +44,10 @@ class DQN(BaseAgent):
     def get_action(self, state: torch.Tensor) -> int:
         """Select an action based on epsilon-greedy policy."""
         if np.random.rand() < self.epsilon:
-            return torch.Tensor([[np.random.randint(self.n_actions)]], device=self.device, dtype=torch.long)
+            return torch.tensor([[np.random.randint(self.n_actions)]], device=self.device, dtype=torch.long)
         else:
             with torch.no_grad():
-                return self.policy_net(state).argmax().item()
+                return self.policy_net(state).max(1).indices.view(1, 1)
             
     def _update(self):
         """Takes an optimization step."""
@@ -61,7 +61,7 @@ class DQN(BaseAgent):
         # Perform optimization step
         self.optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), self.hyperparameters['gradient_clipping'])
+        # torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), self.hyperparameters['gradient_clipping'])
         self.optimizer.step()
 
     def _compute_loss(self, experiences: tuple) -> torch.Tensor:
@@ -110,6 +110,10 @@ class DQN(BaseAgent):
 
         # Train non-episodic task
         for t in count():
+            # print(t)
+            # Decay epsilon
+            self.epsilon *= self.epsilon_decay
+
             # Select and perform an action
             action = self.get_action(state)
             obs, reward, terminated, _, info = self.env.step(action.item())
@@ -136,7 +140,7 @@ class DQN(BaseAgent):
 
             if terminated:
                 # Get the final balance history if the environment has terminated
-                balance_history = self.env.balance_history
+                balance_history = self.env.unwrapped.balance_history
                 break
 
         return balance_history, rewards
