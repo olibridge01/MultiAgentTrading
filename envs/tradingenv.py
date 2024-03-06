@@ -49,7 +49,7 @@ class TradingEnvironment(gym.Env):
             low=0.0,
             high=np.inf,
             shape=(lookback_window * 5,),
-            dtype=np.float32
+            dtype=np.float64
         )
 
     def reset(self, seed: int = None, options: dict = None) -> tuple:

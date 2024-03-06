@@ -17,18 +17,18 @@ To-Do:
     - Debug and test
 """
 
-test_df = pd.read_csv('./datasets/eur-usd-testdata.csv')
+test_df = pd.read_csv('./datasets/eur-usd-h1.csv')
 
 dqn_h1_config = Config()
 dqn_h1_config.hyperparameters = {
     'buffer_size': 10000,
-    'batch_size': 32,
+    'batch_size': 64,
     'hidden_dims': [300, 150],
     'learning_rate': 0.00025,
     'gamma': 0.45,
-    'epsilon': 1.0,
+    'epsilon': 0.9,
     'epsilon_decay': 0.999,
-    'target_update': 50,
+    'target_update': 1000,
     'activation_last_layer': None,
     'gradient_clipping': 100,
     'lookback_window': 60,
@@ -43,5 +43,19 @@ dqn_h1_config.environment = gym.make(
     hold_window=dqn_h1_config.hyperparameters['hold_window']
 )
 
-dqn_h1_agent = DQN(config=dqn_h1_config)
-balance_history, rewards = dqn_h1_agent.train()
+n_exp = 5
+balances = []
+
+for i in range(n_exp):
+    print(f'Running experiment {i+1}/{n_exp}')
+    dqn_h1_agent = DQN(config=dqn_h1_config)
+    balance_history, rewards = dqn_h1_agent.train()
+    balances.append(balance_history)
+    print(f'Final balance: {balance_history[-1]}')
+    plt.plot(balance_history)
+
+
+balances = np.array(balances)
+plt.plot(balances.mean(axis=0), color='black', linewidth=2)
+
+plt.show()
