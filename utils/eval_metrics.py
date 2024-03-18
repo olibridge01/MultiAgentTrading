@@ -16,21 +16,21 @@ import matplotlib.pyplot as plt
 
 class EvalMetrics:
 
+
     def __init__(self, balance_history):
         self._balance_history = balance_history
 
 
-    def average_cumulative_return(self):
-        return (self._balance_history[-1] - self._balance_history[0]) / self._balance_history[0]
+    def cumulative_return(self):
+        return self._balance_history[-1] / self._balance_history[0] - 1      
 
 
-    def average_annual_return(self):
-        # return self.average_cumulative_return() / len(self.balance_history) # chnage according to data frequency
-        pass
+    def annualise_rets(self):
+        return self.cumulative_return() / 9
 
 
     def max_cumulative_return(self):
-        return max(self._balance_history)
+        return max(self._balance_history / self._balance_history[0])
     
 
     def min_cumulative_return(self):
@@ -70,7 +70,8 @@ class EvalMetrics:
             dd = (balance - peak) / peak
             if dd < max_drawdown:
                 max_drawdown = dd
-        return max_drawdown
+        return -max_drawdown
+
 
     def average_max_drawdown(self):
         drawdowns = []
@@ -86,4 +87,4 @@ class EvalMetrics:
                 drawdowns.append(max_drawdown)
                 max_drawdown = 0
                 peak = balance
-        return np.mean(drawdowns)
+        return -np.mean(drawdowns)
