@@ -14,3 +14,12 @@ register(
         'render_mode': None
     }
 )
+
+register(
+    id='trading-v1',
+    entry_point='envs.tradingenv-iw:TradingEnvironment',
+    kwargs={
+        'initial_balance': 100000,
+        'render_mode': None
+    }
+)
