@@ -1,6 +1,6 @@
 import sys
 # import os
-sys.path.append('/Users/isaacwatson/Documents/MSc CSML/COMP0124/research-project/MultiAgentTrading/')
+# sys.path.append('/Users/isaacwatson/Documents/MSc CSML/COMP0124/research-project/MultiAgentTrading/')
 
 import gymnasium as gym
 import numpy as np
@@ -12,29 +12,34 @@ import torch.nn as nn
 import torch.optim as optim
 
 from utils.utils import Config
-from agents.dqn import DQN
+# from agents.dqn import DQN
 from stable_baselines3 import A2C, PPO, DDPG, TD3, SAC, DQN
 import envs
 
 from stable_baselines3.common.env_checker import check_env
 
-train_data = pd.read_csv('datasets/000001.SS-train.csv')
-test_data = pd.read_csv('datasets/000001.SS-test.csv')
+# train_data = pd.read_csv('datasets/000001.SS-train.csv')
+# test_data = pd.read_csv('datasets/000001.SS-test.csv')
+train_data = pd.read_csv('datasets/train_data3.csv')
+test_data = pd.read_csv('datasets/trade_data3.csv')
+plt.plot(test_data['Close'])
+plt.show()
+plt.close()
 
-agent = DDPG
+agent = DQN
 print(str(agent.__name__))
 
 train_env = gym.make(
-    'trading-v1',
+    'trading-v0',
     data=train_data,
-    initial_balance=1000000,
+    initial_balance=1000,
     agent=str(agent.__name__)
     )
 
 test_env = gym.make(
-    'trading-v1',
+    'trading-v0',
     data=test_data,
-    initial_balance=1000000,
+    initial_balance=1000,
     agent=str(agent.__name__)
     )
 
@@ -46,7 +51,8 @@ test_env = gym.make(
 if agent in [DDPG, TD3, SAC]:
     from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
     n_actions = train_env.action_space.shape[-1]
-    action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=0.2*np.ones(n_actions)) # increase sigma to prevent getting stuck in local optima
+    action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=np.ones(n_actions)) # increase sigma to prevent getting stuck in local optima
+    # action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.5*np.ones(n_actions))
     model = agent(
         policy='MlpPolicy', 
         env=train_env, 
@@ -61,10 +67,12 @@ elif agent in [A2C, PPO, DQN]:
     model = agent(
         policy='MlpPolicy', 
         env=train_env, 
-        learning_rate=1e-6
+        learning_rate=1e-4
         ) # increase ent_coef to prevent getting stuck in local optima
     
-model.learn(total_timesteps=1e4, log_interval=1e3)
+print('Learning model...')
+model.learn(total_timesteps=1e6, log_interval=1e3)
+print('Model learned!')
 
 # vec_env = model.get_env()
 obs, info = test_env.reset()
@@ -77,15 +85,17 @@ while True:
         break
 
 plt.figure(figsize=(16,9))
-test_env.render_all()
+test_env.unwrapped.render_all()
 plt.show()
+print(test_env.unwrapped.action_history)
 
 from utils.eval_metrics import EvalMetrics
 
-eval_metrics = EvalMetrics(test_env.history)
+eval_metrics = EvalMetrics(test_env.balance_history)
 print(eval_metrics.cumulative_return())
 print(eval_metrics.annualise_rets())
 print(eval_metrics.max_drawdown())  
+print(eval_metrics.sharpe_ratio())
 
 # dqn_config = Config()
 # dqn_config.hyperparameters = {
