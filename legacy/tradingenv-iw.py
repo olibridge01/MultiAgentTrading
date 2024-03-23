@@ -43,7 +43,7 @@ class TradingEnvironment(gym.Env):
         self.price = self.df.iloc[self._timestep]['Close']
 
         # Environment has k actions: -k, ..., -1, 0, 1, ..., k; initialise to -1, 0, 1
-        self.k = 5
+        self.k = 1
         if self.agent in ['A2C', 'PPO', 'DQN']:
             self.action_space = gym.spaces.Discrete(2*self.k+1)
         elif self.agent in ['DDPG', 'TD3', 'SAC']:
@@ -152,20 +152,22 @@ class TradingEnvironment(gym.Env):
         self._cum_returns.append(compound_returns)
 
     def _exceute_trade(self, action: int):
-        if self.agent in ['A2C', 'PPO']:
-            tmp_action = action - (self.k+1)
+        if self.agent in ['A2C', 'PPO', 'DQN']:
+            tmp_action = action - (self.k)
             # print(tmp_action)
             trade_amount = tmp_action * self.df.iloc[self._timestep]['Close']
             # Check if the trade is possible
             # if (self.balance - trade_amount < 0):
             if (self.stock_holdings + tmp_action < 0) or (self.balance - trade_amount < 0):                
                 # Prevent the trade from occurring
+                self._holdings_history.append(self.stock_holdings)
                 return
             self.balance -= trade_amount
             self.stock_holdings += tmp_action
             # print(f'Action: {action}, Trade amount: {trade_amount}, Balance: {self.balance}, Stock holdings: {self.stock_holdings}')
+            self._holdings_history.append(self.stock_holdings)
         
-        elif self.agent in ['DQN', 'DDPG', 'TD3', 'SAC']:
+        elif self.agent in ['DDPG', 'TD3', 'SAC']:
             int_action = int(action * self.k)
             # print(int_action)
             trade_amount = int_action * self.df.iloc[self._timestep]['Close']
@@ -173,10 +175,12 @@ class TradingEnvironment(gym.Env):
             # if (self.balance - trade_amount < 0):
             if (self.stock_holdings + int_action < 0) or (self.balance - trade_amount < 0):
                 # Prevent the trade from occurring
+                self._holdings_history.append(self.stock_holdings)
                 return
             self.balance -= trade_amount
             self.stock_holdings += int_action
             # print(f'Action: {action}, Trade amount: {trade_amount}, Balance: {self.balance}, Stock holdings: {self.stock_holdings}')
+            self._holdings_history.append(self.stock_holdings)
 
     def _calculate_reward(self):
         if len(self.history) == 1:
