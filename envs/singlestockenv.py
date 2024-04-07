@@ -10,10 +10,6 @@ class SingleStockEnvironment(gym.Env):
     OpenAI gym environment for single stock trading.
 
     Currently supports buy, sell, and hold actions.
-
-    To-Do:
-        - Implement transaction costs?
-        - Implement other reward functions (Sharpe ratio, etc.)?
     """
     metadata = {'render_modes': ['None']}
 
@@ -22,9 +18,15 @@ class SingleStockEnvironment(gym.Env):
             data: pd.DataFrame,
             initial_balance: int = 1000,
             time_window: int = 1,
-            n_step: int = 10,
-            transaction_cost: float = 0.0
+            n_step: int = 10
     ):
+        """
+        Args:
+        - data (pd.DataFrame): DataFrame containing the stock data.
+        - initial_balance (int): Initial balance for the trading account.
+        - time_window (int): Number of time steps to consider in the state.
+        - n_step (int): Number of time steps to consider for the reward horizon.
+        """
         super(SingleStockEnvironment, self).__init__()
 
         # Environment parameters
@@ -34,9 +36,6 @@ class SingleStockEnvironment(gym.Env):
 
         # Reward horizon
         self.n_step = n_step
-
-        # CURRENTLY NOT IMPLEMENTED FULLY
-        self.transaction_cost = transaction_cost
 
         # Get array of (OHLC) states over the trading period
         self.states = self.df[['Open', 'High', 'Low', 'Close']].values
