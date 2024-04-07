@@ -12,43 +12,51 @@ import torch.nn.functional as F
 
 from utils.utils import Config, ExperienceReplay
 from agents.base_agent import BaseAgent
-from utils.networks import QNetworkMLP, DQN_Net, DQN_Net2
-
+from utils.networks import DQN_Net
 
 class DQN(BaseAgent):
     """
-    Single DQN agent.
-    
-    THIS IS THE AGENT CURRENTLY BEING USED
+    Single agent implementation of the Deep Q-Learning (DQN) algorithm.
+
+    Agent features:
+    - Epsilon-greedy policy.
+    - Experience replay.
+    - Target network to stabilise learning.
+    - Episode-based training.
     """
     def __init__(self, config: Config):
+        """
+        Args:
+        - config (Config): Configuration object for the agent which contains environment and hyperparameters.
+        """
         super(DQN, self).__init__(config)
+
+        # Replay memory
         self.memory = ExperienceReplay(buffer_size=self.hyperparameters['buffer_size'])
         
+        # Initialise policy and target networks
         self.policy_net = DQN_Net(
             input_dims=self.env.observation_space.shape[0],
             n_actions=self.n_actions,
             hidden_dims=self.hyperparameters['hidden_dims'],
             device=self.device
         )
-        
         self.target_net = DQN_Net(
             input_dims=self.env.observation_space.shape[0],
             n_actions=self.n_actions,
             hidden_dims=self.hyperparameters['hidden_dims'],
             device=self.device
         )
-        self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.target_net.load_state_dict(self.policy_net.state_dict()) # Load policy net weights into target net
         
-        self.epsilon = self.hyperparameters['epsilon']
+        # Optimizer and loss function
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.hyperparameters['learning_rate'])
         self.loss = nn.SmoothL1Loss()
 
-        # HARD-CODED EPSILON DECAY - REPLICATING PAPER
-        self.EPS_START = 0.9
-        self.EPS_END = 0.05
-        self.EPS_DECAY = 500
-
+        # Epsilon decay for epsilon-greedy policy
+        self.eps_start = self.hyperparameters['epsilon_start']
+        self.eps_end = self.hyperparameters['epsilon_end']
+        self.eps_decay = self.hyperparameters['epsilon_decay']
         self.steps_done = 0
 
     def get_action(self, state: torch.Tensor) -> int:
@@ -61,24 +69,21 @@ class DQN(BaseAgent):
         Returns:
         - int: Action to take in the environment.
         """
-
-        eps_threshold = self.EPS_END + (self.EPS_START - self.EPS_END) * \
-                        np.exp(-1. * self.steps_done / self.EPS_DECAY)
+        # Decay epsilon based on number of steps taken
+        eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * np.exp(-self.steps_done / self.eps_decay)
         self.steps_done += 1
 
-
+        # Select action based on epsilon-greedy policy
         if np.random.rand() < eps_threshold:
             self.current_action = torch.tensor([[np.random.randint(self.n_actions)]], device=self.device, dtype=torch.long)
-
         else:
             with torch.no_grad():
                 self.policy_net.eval()
-                self.current_action = self.policy_net(state).max(1).indices.view(1, 1)
+                self.current_action = self.policy_net(state).max(1).indices.view(1, 1) # Sample action from policy net
                 self.policy_net.train()
         
         return self.current_action
         
-            
     def _update(self):
         """Takes an optimization step."""
         if len(self.memory) < self.hyperparameters['batch_size']:
@@ -114,6 +119,7 @@ class DQN(BaseAgent):
         actions = torch.cat(experiences.action)
         rewards = torch.cat(experiences.reward)
 
+        # Compute mask for non-final states
         non_final_mask = torch.tensor(
             tuple(map(lambda s: s is not None, experiences.next_state)),
             device=self.device,
@@ -129,29 +135,28 @@ class DQN(BaseAgent):
         # Compute Q-values for the policy network
         Q_policy = self.policy_net(states).gather(1, actions)
 
-        # Compute loss
+        # Compute loss using defined loss function
         loss = self.loss(Q_policy, Q_target)
 
         return loss
 
-    def train(self, n_episodes: int) -> list:
+    def train(self, n_episodes: int, model_path: str) -> list:
         """
         Train the agent with DQN algorithm.
         
         Args:
         - n_episodes (int): Number of episodes to train the agent for.
+        - model_path (str): Path to save the model weights.
 
         Returns:
         - list: List of rewards obtained during training.
         """
 
         # Initialise training hyperparameters
-        self.epsilon_decay = self.hyperparameters['epsilon_decay']
         self.target_update = self.hyperparameters['target_update']
 
-        rewards = []
-
-        print(self.policy_net)
+        rewards = [] # List to store rewards obtained during training
+        print(f'Training agent for {n_episodes} episodes...')
 
         for i in range(n_episodes):
             print(f'Running episode {i+1}/{n_episodes}')
@@ -164,11 +169,6 @@ class DQN(BaseAgent):
 
             # Run through episode
             for t in count():
-
-                # Decay epsilon
-                # Currently redundant whilst using hard-coded epsilon decay from paper
-                # self.epsilon *= self.epsilon_decay
-
                 # Select and perform an action
                 action = self.get_action(state)
                 obs, reward, terminated, _, info = self.env.step(action.item())
@@ -192,13 +192,13 @@ class DQN(BaseAgent):
 
                 if terminated:
                     break
-
+            
             # Update the target network every `target_update` timesteps
             if i % self.target_update == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
         
         # Save policy network
-        torch.save(self.policy_net.state_dict(), 'models/policy_net.pkl')
+        torch.save(self.policy_net.state_dict(), model_path)
         return rewards
     
     def test(self, model_path: str, data: pd.DataFrame) -> list:
@@ -213,6 +213,7 @@ class DQN(BaseAgent):
         - list: List of actions taken by the agent during the testing period.
         """
 
+        # Load policy network weights into a test network
         self.test_net = DQN_Net(
             input_dims=self.env.observation_space.shape[0],
             n_actions=self.n_actions,
@@ -221,27 +222,11 @@ class DQN(BaseAgent):
         )
         self.test_net.load_state_dict(torch.load(model_path))
 
-        # obs, info = self.env.reset()
-        # state = torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(self.device)
-        actions = []
+        actions = [] # List to store actions taken by the agent throughout testing
 
-        # for t in count():
-        #     with torch.no_grad():
-        #         self.test_net.eval()
-        #         action = self.test_net(state).max(1)[1].view(1, 1)
-        #         self.test_net.train()
-
-        #     actions.append(action.item())
-        #     obs, reward, terminated, _, info = self.env.step(action.item())
-        #     if terminated:
-        #         break
-
-        #     state = self.env.unwrapped.get_current_state()
-        #     state = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(self.device)
-
-        # Split data into batches of 10
-        for i in range(0, len(data), 10):
-            state = torch.tensor(data.iloc[i:i+10].values, dtype=torch.float32).to(self.device)
+        test_batch = 10
+        for i in range(0, len(data), test_batch):
+            state = torch.tensor(data.iloc[i:i+test_batch].values, dtype=torch.float32).to(self.device)
             try:
                 action_batch = self.test_net(state).max(1)[1]
                 actions += list(action_batch.cpu().numpy())
