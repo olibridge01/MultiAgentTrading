@@ -117,7 +117,7 @@ def split_data(data: pd.DataFrame, split_date: str) -> tuple:
 
 def agent_counter(count: int, num_agents: int) -> int:
     """
-    Increments the agent counter.
+    Increments the agent counter - For use in multi-agent environments.
 
     Args:
     - count (int): Current count.
