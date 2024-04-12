@@ -323,7 +323,7 @@ class MultiAgentDQN(BaseAgent):
             self.test_nets[agent].load_state_dict(torch.load(model_paths[i]))
 
         actions = [] # List to store actions taken by the final agent throughout testing
-        test_batch = 10
+        test_batch = 5
 
         # Initialize current actions as hold for all agents
         agent_data = {f'agent_{i}': data_preprocessing(data, self.trading_windows[i]) for i in range(self.num_agents)}

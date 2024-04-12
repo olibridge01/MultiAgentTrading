@@ -156,7 +156,7 @@ class DQN(BaseAgent):
         self.target_update = self.hyperparameters['target_update']
 
         rewards = [] # List to store rewards obtained during training
-        print(f'Training agent for {n_episodes} episodes...')
+        print(f'Training single agent for {n_episodes} episodes...')
 
         for i in range(n_episodes):
             print(f'Running episode {i+1}/{n_episodes}')
@@ -224,7 +224,7 @@ class DQN(BaseAgent):
 
         actions = [] # List to store actions taken by the agent throughout testing
 
-        test_batch = 10
+        test_batch = 5
         for i in range(0, len(data), test_batch):
             state = torch.tensor(data.iloc[i:i+test_batch].values, dtype=torch.float32).to(self.device)
             try:
