@@ -1,7 +1,7 @@
 
 ![Python3.10](https://img.shields.io/pypi/pyversions/msmhelper)  
 
-# MultiAgentTrading
+# Hierarchical Multi-Agent Reinforcement Learning Approaches to Algorithmic Trading
 This repository contains the code for the Multi-Agent Artificial Intelligence project for COMP0124 at UCL. The project investigates hierarchical multi-agent reinforcement learning approaches to algorithmic trading. 
 
 ## Installation and Setup
@@ -19,5 +19,3 @@ conda activate MultiAgentTrading
 # Install requirements
 pip install -r requirements.txt
 ```
-
-

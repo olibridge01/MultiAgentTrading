@@ -13,7 +13,7 @@ from utils.utils import Config
 
 class BaseAgent(object):
     """
-    Base class for (single agent) reinforcement learning algorithm implementations.
+    Base class for reinforcement learning algorithm implementations.
 
     To-Do:
         - Add more base methods as code develops/implement more than just DQN.

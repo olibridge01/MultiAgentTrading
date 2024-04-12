@@ -90,29 +90,11 @@ def split_data(data: pd.DataFrame, split_date: str) -> tuple:
     train = data[data.index < split_date]
     test = data[data.index >= split_date]
 
+    # Reset indices to numerical values but keep date column
+    train.reset_index(inplace=True)
+    test.reset_index(inplace=True)
+
     return train, test
-
-
-# def ohlc_converter(data: np.ndarray, index: int, window_size: int) -> np.ndarray:
-#     """
-#     Applies operations to the last window_size number of data points in a DataFrame.
-
-#     Parameters:
-#     data (np.ndarray): The original DataFrame converted to a NumPy array.
-#     index (int): The index to start the window from.
-#     window_size (int): The size of the window.
-
-#     Returns:
-#     np.ndarray: A NumPy array where each element is the result of applying an operation to the window.
-#     """
-#     #print(data.shape)
-#     #print(index-window_size+1, index+1)
-#     window_0 = data[index-window_size+1:index+1, 0]
-#     window_1 = data[index-window_size+1:index+1, 1]
-#     window_2 = data[index-window_size+1:index+1, 2]
-#     window_3 = data[index-window_size+1:index+1, 3]
-
-#     return np.array([window_0[0], window_1.max(), window_2.min(), window_3[-1]])
 
 
 def agent_counter(count: int, num_agents: int) -> int:
@@ -129,9 +111,9 @@ def agent_counter(count: int, num_agents: int) -> int:
     return count % num_agents
 
 
-def plot_portfolio(data: pd.DataFrame, actions: list, initial_balance: int = 1000, start_timestep: int = 0):
+def compute_portfolio(data: pd.DataFrame, actions: list, initial_balance: int = 1000, start_timestep: int = 0):
     """
-    Plots the portfolio balance over time.
+    Computes the portfolio balance over time.
 
     Args:
     - data (pd.DataFrame): DataFrame containing the data to plot.
@@ -145,9 +127,6 @@ def plot_portfolio(data: pd.DataFrame, actions: list, initial_balance: int = 100
     num_shares = 0
 
     close_prices = data['Close'].values[start_timestep:]
-
-    # assert len(actions) == len(close_prices), 'Length of actions and close prices must be the same.'
-    # print(len(actions), len(close_prices))
 
     # Iterate through list of actions and update portfolio value
     for i, action in enumerate(actions):
@@ -174,6 +153,20 @@ def plot_portfolio(data: pd.DataFrame, actions: list, initial_balance: int = 100
         # If action in [sell, hold] and no shares owned, hold cash
         elif (action == 2 or action == 1) and num_shares == 0:
             portfolio_value.append(portfolio_value[-1])
+
+    return portfolio_value
+
+
+def plot_portfolio(data: pd.DataFrame, actions: list, initial_balance: int = 1000, start_timestep: int = 0):
+    """
+    Plots the portfolio balance over time.
+
+    Args:
+    - data (pd.DataFrame): DataFrame containing the data to plot.
+    - actions (list): List of actions taken by the agent.
+    - initial_balance (int): Initial balance for the portfolio.
+    """
+    portfolio_value = compute_portfolio(data, actions, initial_balance=initial_balance, start_timestep=start_timestep)
 
     plt.figure(figsize=(10, 6))
     plt.plot(portfolio_value, color='b', label='Portfolio Value')
@@ -228,8 +221,10 @@ def data_preprocessing(df: pd.DataFrame, timeframe: int = 3) -> pd.DataFrame:
     - pd.DataFrame: Preprocessed data.
     """
     data = df.copy()
+
+    # Get OHLC values for the given timeframe
     data['Open'] = data['Open'].shift(timeframe - 1)
     data['High'] = data['High'].rolling(window=timeframe).max()
     data['Low'] = data['Low'].rolling(window=timeframe).min()
-    # data.dropna(subset=['Open'], inplace=True)  # Drop rows with missing open a week ago
+    
     return data
