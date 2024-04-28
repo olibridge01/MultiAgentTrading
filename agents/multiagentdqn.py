@@ -97,15 +97,13 @@ class MultiAgentDQN(BaseAgent):
         else:
             with torch.no_grad():
                 policy_net.eval()
-                #print(state.shape)
+
                 action = policy_net(state).max(1).indices.view(1, 1)
-                # last_layer_params = list(policy_net.parameters())[-1]
-                #print(agent, 's policy net final layer parameters when getting an action:', last_layer_params)
+
                 policy_net.train()
 
         # Update the current action for the agent
         self.current_actions[agent] = action
-        #print(agent, 's action:', action.item())
 
         return action
         
@@ -127,9 +125,6 @@ class MultiAgentDQN(BaseAgent):
         optimizer.zero_grad()
         loss.backward()
 
-        # Print agent's last layer parameters before optimization step
-        last_layer_params = list(policy_net.parameters())[-1]
-        #print(agent, 's policy net final layer parameters before optimization step:', last_layer_params)  
 
         # Clamp gradients to prevent exploding gradients
         for param in policy_net.parameters():
@@ -137,9 +132,6 @@ class MultiAgentDQN(BaseAgent):
 
         optimizer.step()
 
-        # Print agent's last layer parameters after optimization step
-        last_layer_params = list(policy_net.parameters())[-1]
-        #print(agent, 's policy net final layer parameters after optimization step:', last_layer_params)
 
     def _compute_loss(self, experiences: tuple, agent: str) -> torch.Tensor:
         """
@@ -155,13 +147,8 @@ class MultiAgentDQN(BaseAgent):
 
         # Get the policy network, target network, and loss function for the agent
         policy_net = self.policy_nets[agent]
-        # print the last layer parameters of the policy net of the agent during the computation of the loss
-        last_layer_params = list(policy_net.parameters())[-1]   
-        #print(agent, 's policy net final layer parameters during the computation of the loss:', last_layer_params)
+
         target_net = self.target_nets[agent]
-        # print the last layer parameters of the target net of the agent during the computation of the loss
-        last_layer_params = list(target_net.parameters())[-1]
-        #print(agent, 's target net final layer parameters during the computation of the loss:', last_layer_params)
 
         loss = self.losses[agent]
 
@@ -204,10 +191,6 @@ class MultiAgentDQN(BaseAgent):
         
         rewards = [] # List to store rewards obtained during training
 
-        # print the final agent's policy network
-        # final_agent = list(self.policy_nets.keys())[-1]
-        #print(self.policy_nets[final_agent])
-
         print(f'Training multi-agent framework for {n_episodes} episodes...')
         
         for j in range(n_episodes):
@@ -243,8 +226,6 @@ class MultiAgentDQN(BaseAgent):
                         next_state = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0).to(self.device)
                         next_state = next_state[:, :self.env.observation_space.shape[0] - self.num_agents + i + 1]
 
-                    # print the next state produced by the environment for the agent 
-                    #print(agent, 's next state:', next_state)
 
                     # Add reward to list of rewards if final agent
                     if i == self.num_agents - 1:
